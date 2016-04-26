@@ -30,6 +30,11 @@ double SetRoll, IputRoll, OputRoll;
 double SetPitch, IputPitch, OputPitch;
 double SetThro, IputThro, OputThro;
 
+int Yaw;
+int Roll;
+int Pitch;
+int Throttle;
+
 PID YawPid(&IputYaw, &OputYaw, &SetYaw,5,10,10,DIRECT);
 PID RollPid(&IputRoll, &OputRoll, &SetRoll,5,10,10,DIRECT);
 PID PitchPid(&IputPitch, &OputPitch, &SetPitch,5,10,10,DIRECT);
@@ -125,30 +130,44 @@ ControllerInput GetControllerInput()
   return Result;
 }
 
+void compute_PID(double set_Thro,double set_Roll,double set_Pitch,double set_Yaw)
+{
+    
+    SetYaw=set_Yaw;
+    SetPitch=set_Pitch;
+    SetRoll=set_Roll;
+    //SetThro=set_Thro;
+    Throttle=set_Thro;
+
+    IputPitch=gyro.data.x;
+    IputRoll=gyro.data.y;
+    IputYaw=gyro.data.z;
+
+    YawPid.Compute();
+    PitchPid.Compute();
+    RollPid.Compute();
+    //ThroPid.Compute();
+    
+    Yaw=OputYaw;
+    Roll=OputRoll;
+    Pitch=OputPitch;
+    //Throttle=OputThro;
+}
 
 void loop(){
   gyro.read();
-
+  
   if (ManualControl)
   {
     const int CONTROLLER_MAX = 1024;
     const int CONTROLLER_MIN = 0;
 
     ControllerInput Input = GetControllerInput();
-    IputThro = Input.Throttle;
-    IputRoll = Input.Roll;
-    IputPitch    = Input.Pitch;
-    IputYaw      = Input.Yaw;
 
-    YawPid.Compute();
-    PitchPid.Compute();
-    RollPid.Compute();
-    ThroPid.Compute();
+    
+    
+    compute_PID(Input.Throttle,Input.Roll,Input.Pitch,Input.Yaw);
 
-    int Yaw=OputYaw;
-    int Roll=OputRoll;
-    int Pitch=OputPitch;
-    int Throttle=OputThro;
     
     Throttle = map(Throttle, CONTROLLER_MIN, CONTROLLER_MAX, SERVO_OFF, SERVO_FULL);
     Roll     = map(Roll,     CONTROLLER_MIN, CONTROLLER_MAX, SERVO_OFF, SERVO_FULL);
